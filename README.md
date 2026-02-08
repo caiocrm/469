@@ -83,6 +83,44 @@ Token: 4672 -> a=4 b=6 c=7 d=2 - 4 - 3 - ['awdp', 'cpcw', 'cfw', 'ce'] - 7 - 2
 6468895219911800651288952364672119118
 BEHOLDER
 ```
+Current process:
+```markdown
+input_sequence, eg: 6468895219911800651288952364672119118
+split in chunks of 4 (offseted by 3). I don't know if it works with offset 3 because the first 3 digits represent a control token or other offsets need other calculations (one per eye).
+chunks = [8895, 2199, ...]
+
+For each chunk (token), here's how to get the letter:
+token = 8895
+a, b, c, d = ord(token[0]) - 48, ord(token[1]) - 48, ord(token[2]) - 48, ord(token[3]) - 48
+
+Why ord(token[i])?
+ord(token[i]) get the ascii decimal value of this digit.
+Why -48?
+Because the ascii value of '0' is 48, so ord('0') - 48 = 0, ord('1') - 48 = 1, ..., ord('9') - 48 = 9. This way we convert the character digit to its integer value
+
+Next, we use a 4x4 matrix to get a value v from the coordinates (r, cc)
+with r = a % 4 and cc = b % 4
+v = matrix[r, cc]
+
+with v, we get a row from BOOK2_ROWS using v - 1 (because index in python is 0-based and v is 1-based)
+row_index = v - 1
+row = BOOK2_ROWS[row_index]
+L = len(row)
+with this row, we get the letter using c and d as coordinates, for example with col = (d - c) % len(row)
+if c == d:
+    # this is the same as undoing the split per digit
+    col = (10 * c + d) % L
+else:
+    col = (d - c) % L
+
+block = row[col]
+Finally, we find the index of this letter in BOOK2_FLAT and map it to AZ to get the final letter to output.
+Why it works? Because we have 26 blocks, so with a given block index, we just pass to the alphabet to get the selected letter:
+block_index = BOOK2_FLAT.index(block)
+AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+letter = AZ[block_index]
+
+```
 - I also found UND DANKH (almost UND DANKE), so searching for german words while bruteforcing parameters are required. And the book funny letters suggest the usage of german umlaut vowels (or just mabye a hint that we should use ascii).
 - The decoding process is incomplete. Maybe it is one offset per eye. Maybe we are missing rules or the rules are dynamic.
 - if you're gonna test your own sequences, ask yourself if you know the start of the sequence.
